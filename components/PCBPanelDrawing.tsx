@@ -12,22 +12,24 @@ const DimensionLine = ({
   value, 
   position = 'top', 
   offset = 10, 
-  textGap = 0 
+  textGap = 0,
+  textScale = 1
 }: { 
   x1: number, y1: number, x2: number, y2: number, 
   value: number | string, 
   position?: 'top' | 'bottom' | 'left' | 'right', 
   offset?: number,
-  textGap?: number
+  textGap?: number,
+  textScale?: number
 }) => {
   const tickSize = 3;
   const isHorizontal = Math.abs(y1 - y2) < 0.1;
   const textColor = "#1e3a8a"; // 深藍色
   const lineColor = "#cbd5e1"; // 標註線顏色
+  const fontSize = 10 * textScale;
   
-  // 文字距離標註線的基礎位移量
-  // 當 textGap 為 0 時，文字稍微浮在線上 (約 4px) 避免壓線，這是製圖習慣
-  const baseSpacing = textGap === 0 ? 4 : textGap;
+  // 文字距離標註線的基礎位移量，隨文字放大自動微調避免壓線
+  const baseSpacing = (textGap === 0 ? 4 : textGap) + Math.max(0, (fontSize - 10) * 0.45);
 
   let lx1 = x1, ly1 = y1, lx2 = x2, ly2 = y2;
   let tx = 0, ty = 0, rotate = 0;
@@ -65,14 +67,15 @@ const DimensionLine = ({
         </>
       )}
 
-      {/* 標註數字 */}
+      {/* 標註數字 (僅隨百分比縮放文字大小) */}
       <text
         x={tx}
         y={ty}
+        fontSize={fontSize}
         textAnchor="middle"
         dominantBaseline="middle"
         transform={rotate ? `rotate(${rotate}, ${tx}, ${ty})` : ''}
-        className="text-[10px] font-black select-none pointer-events-none"
+        className="font-black select-none pointer-events-none"
         fill={textColor}
       >
         {value}
@@ -96,8 +99,11 @@ export const PCBPanelDrawing: React.FC<PCBPanelDrawingProps> = ({ config, zoom =
     return Number(num.toFixed(2)).toString();
   };
 
+  const textScale = zoom / 100;
+  const extraTextMargin = Math.max(0, (10 * textScale - 10) * 1.5);
+
   // 適配檢視範圍，確保上下左右標註文字在手機與電腦上皆完整顯示不裁切
-  const margin = Math.max(65, (totalWidth + totalHeight) * 0.1);
+  const margin = Math.max(65 + extraTextMargin, (totalWidth + totalHeight) * 0.1 + extraTextMargin);
   const viewBoxWidth = totalWidth + margin * 2;
   const viewBoxHeight = totalHeight + margin * 2;
 
@@ -127,19 +133,12 @@ export const PCBPanelDrawing: React.FC<PCBPanelDrawingProps> = ({ config, zoom =
   const WIREFRAME_COLOR = "#064e3b";
 
   return (
-    <div className="w-full h-full min-h-[300px] sm:min-h-[380px] max-h-[65vh] md:max-h-full flex overflow-auto bg-white rounded-xl border border-slate-100">
-      <div
-        className="m-auto shrink-0 flex items-center justify-center transition-all duration-150"
-        style={{
-          width: `${zoom}%`,
-          height: `${zoom}%`,
-        }}
+    <div className="w-full h-full min-h-[300px] sm:min-h-[380px] flex items-center justify-center overflow-hidden">
+      <svg
+        viewBox={`-${margin} -${margin} ${viewBoxWidth} ${viewBoxHeight}`}
+        preserveAspectRatio="xMidYMid meet"
+        className="w-full h-full max-h-[65vh] md:max-h-full select-none transition-all duration-200"
       >
-        <svg
-          viewBox={`-${margin} -${margin} ${viewBoxWidth} ${viewBoxHeight}`}
-          preserveAspectRatio="xMidYMid meet"
-          className="w-full h-full select-none"
-        >
         <rect x={-margin} y={-margin} width={viewBoxWidth} height={viewBoxHeight} fill="#ffffff" />
 
         {/* 併板主外框 (0.1mm) */}
@@ -170,40 +169,39 @@ export const PCBPanelDrawing: React.FC<PCBPanelDrawingProps> = ({ config, zoom =
         {/* --- 標註系統 --- */}
         
         {/* 總尺寸標註 (文字距離 0mm, 自動精度) */}
-        <DimensionLine x1={0} y1={0} x2={totalWidth} y2={0} value={formatValue(totalWidth)} position="top" offset={35} textGap={0} />
-        <DimensionLine x1={0} y1={0} x2={0} y2={totalHeight} value={formatValue(totalHeight)} position="left" offset={35} textGap={0} />
+        <DimensionLine x1={0} y1={0} x2={totalWidth} y2={0} value={formatValue(totalWidth)} position="top" offset={35} textGap={0} textScale={textScale} />
+        <DimensionLine x1={0} y1={0} x2={0} y2={totalHeight} value={formatValue(totalHeight)} position="left" offset={35} textGap={0} textScale={textScale} />
 
         {/* 單板尺寸 (文字距離 5mm) */}
         {units.length > 0 && (
           <>
-            <DimensionLine x1={units[0].x} y1={units[0].y + unitHeight} x2={units[0].x + unitWidth} y2={units[0].y + unitHeight} value={unitWidth} position="bottom" offset={10} textGap={5} />
-            <DimensionLine x1={units[0].x + unitWidth} y1={units[0].y} x2={units[0].x + unitWidth} y2={units[0].y + unitHeight} value={unitHeight} position="right" offset={10} textGap={5} />
+            <DimensionLine x1={units[0].x} y1={units[0].y + unitHeight} x2={units[0].x + unitWidth} y2={units[0].y + unitHeight} value={unitWidth} position="bottom" offset={10} textGap={5} textScale={textScale} />
+            <DimensionLine x1={units[0].x + unitWidth} y1={units[0].y} x2={units[0].x + unitWidth} y2={units[0].y + unitHeight} value={unitHeight} position="right" offset={10} textGap={5} textScale={textScale} />
           </>
         )}
 
         {/* 中間間距 (文字距離 0mm) */}
         {countX > 1 && gapX > 0 && (
-           <DimensionLine x1={railLeft + unitWidth} y1={railTop} x2={railLeft + unitWidth + gapX} y2={railTop} value={gapX} position="top" offset={10} textGap={0} />
+           <DimensionLine x1={railLeft + unitWidth} y1={railTop} x2={railLeft + unitWidth + gapX} y2={railTop} value={gapX} position="top" offset={10} textGap={0} textScale={textScale} />
         )}
         {countY > 1 && gapY > 0 && (
-           <DimensionLine x1={railLeft} y1={railTop + unitHeight} x2={railLeft} y2={railTop + unitHeight + gapY} value={gapY} position="left" offset={10} textGap={0} />
+           <DimensionLine x1={railLeft} y1={railTop + unitHeight} x2={railLeft} y2={railTop + unitHeight + gapY} value={gapY} position="left" offset={10} textGap={0} textScale={textScale} />
         )}
 
         {/* 板邊 (文字距離 0mm) */}
         {railTop > 0 && (
-          <DimensionLine x1={totalWidth} y1={0} x2={totalWidth} y2={railTop} value={railTop} position="right" offset={10} textGap={0} />
+          <DimensionLine x1={totalWidth} y1={0} x2={totalWidth} y2={railTop} value={railTop} position="right" offset={10} textGap={0} textScale={textScale} />
         )}
         {railBottom > 0 && (
-          <DimensionLine x1={totalWidth} y1={totalHeight - railBottom} x2={totalWidth} y2={totalHeight} value={railBottom} position="right" offset={10} textGap={0} />
+          <DimensionLine x1={totalWidth} y1={totalHeight - railBottom} x2={totalWidth} y2={totalHeight} value={railBottom} position="right" offset={10} textGap={0} textScale={textScale} />
         )}
         {railLeft > 0 && (
-          <DimensionLine x1={0} y1={totalHeight} x2={railLeft} y2={totalHeight} value={railLeft} position="bottom" offset={10} textGap={0} />
+          <DimensionLine x1={0} y1={totalHeight} x2={railLeft} y2={totalHeight} value={railLeft} position="bottom" offset={10} textGap={0} textScale={textScale} />
         )}
         {railRight > 0 && (
-          <DimensionLine x1={totalWidth - railRight} y1={totalHeight} x2={totalWidth} y2={totalHeight} value={railRight} position="bottom" offset={10} textGap={0} />
+          <DimensionLine x1={totalWidth - railRight} y1={totalHeight} x2={totalWidth} y2={totalHeight} value={railRight} position="bottom" offset={10} textGap={0} textScale={textScale} />
         )}
       </svg>
-      </div>
     </div>
   );
 };

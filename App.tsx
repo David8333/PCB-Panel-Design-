@@ -183,13 +183,14 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* 百分比縮放控制器 */}
-            <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-50 border border-slate-200/80 rounded-xl p-1">
+            {/* 圖面文字百分比縮放控制器 */}
+            <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-50 border border-slate-200/80 rounded-xl p-1 pl-2.5">
+              <span className="text-xs font-bold text-slate-500 whitespace-nowrap">文字縮放</span>
               <button
                 type="button"
                 onClick={handleZoomOut}
                 disabled={zoom <= MIN_ZOOM}
-                title="縮小"
+                title="縮小圖面文字"
                 className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-slate-700 hover:bg-white hover:shadow-sm disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:shadow-none transition-all cursor-pointer disabled:cursor-not-allowed"
               >
                 <ZoomOut className="w-4 h-4" />
@@ -202,14 +203,14 @@ const App: React.FC = () => {
                 step={5}
                 value={zoom}
                 onChange={(e) => setZoom(Number(e.target.value))}
-                aria-label="縮放百分比"
+                aria-label="圖面文字縮放百分比"
                 className="w-20 sm:w-28 accent-slate-900 cursor-pointer"
               />
 
               <button
                 type="button"
                 onClick={() => setZoom(100)}
-                title="點擊還原 100%"
+                title="點擊還原 100% 文字大小"
                 className="min-h-[36px] px-2.5 rounded-lg text-xs font-black text-slate-800 hover:bg-white hover:shadow-sm transition-all tabular-nums whitespace-nowrap cursor-pointer"
               >
                 {zoom}%
@@ -219,7 +220,7 @@ const App: React.FC = () => {
                 type="button"
                 onClick={handleZoomIn}
                 disabled={zoom >= MAX_ZOOM}
-                title="放大"
+                title="放大圖面文字"
                 className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-slate-700 hover:bg-white hover:shadow-sm disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:shadow-none transition-all cursor-pointer disabled:cursor-not-allowed"
               >
                 <ZoomIn className="w-4 h-4" />
