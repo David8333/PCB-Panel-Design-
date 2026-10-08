@@ -1,0 +1,6 @@
+{
+  "name": "PCB 併板設計",
+  "description": "一個專業的 PCB 併板尺寸設計與視覺化工具，支援即時繪圖、尺寸標註與生產建議。",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
