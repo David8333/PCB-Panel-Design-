@@ -3,22 +3,24 @@ import React, { useState, useMemo } from 'react';
 import { PCBConfig, PanelResult } from './types';
 import { NumberInput } from './components/NumberInput';
 import { PCBPanelDrawing } from './components/PCBPanelDrawing';
-import { Layout, Settings, Ruler, Box } from 'lucide-react';
+import { Layout, Settings, Ruler, Box, RotateCcw } from 'lucide-react';
+
+const INITIAL_CONFIG: PCBConfig = {
+  unitWidth: 0,
+  unitHeight: 0,
+  countX: 0,
+  countY: 0,
+  railTop: 0,
+  railBottom: 0,
+  railLeft: 0,
+  railRight: 0,
+  gapX: 0,
+  gapY: 0,
+};
 
 const App: React.FC = () => {
   // 所有欄位預設為 0
-  const [config, setConfig] = useState<PCBConfig>({
-    unitWidth: 0,
-    unitHeight: 0,
-    countX: 0,
-    countY: 0,
-    railTop: 0,
-    railBottom: 0,
-    railLeft: 0,
-    railRight: 0,
-    gapX: 0,
-    gapY: 0,
-  });
+  const [config, setConfig] = useState<PCBConfig>(INITIAL_CONFIG);
 
   const results = useMemo((): PanelResult => {
     const totalW = config.railLeft + config.railRight + (config.unitWidth * config.countX) + (config.gapX * (Math.max(0, config.countX - 1)));
@@ -40,32 +42,57 @@ const App: React.FC = () => {
     setConfig(prev => ({ ...prev, [key]: isNaN(val) ? 0 : val }));
   };
 
+  const handleReset = () => {
+    setConfig(INITIAL_CONFIG);
+  };
+
+  const hasNonZeroValue = useMemo(() => {
+    return Object.values(config).some(val => val !== 0);
+  }, [config]);
+
   // 格式化數字：整數顯示整數，小數最多顯示兩位
   const formatDim = (num: number) => {
     return Number(num.toFixed(2)).toString();
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-[#f8fafc]">
-      {/* 側邊控制欄 */}
-      <aside className="w-full md:w-[350px] lg:w-[380px] bg-white border-r border-slate-200 p-6 flex flex-col gap-6 overflow-y-auto max-h-screen sticky top-0 z-10 shadow-xl">
-        <div className="flex items-center gap-3 border-b border-slate-100 pb-5">
-          <div className="p-2.5 bg-slate-900 rounded-xl">
-            <Box className="text-white w-5 h-5" />
+    <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#f8fafc] text-slate-900">
+      {/* 側邊控制欄 (手機版自然向下捲動不遮擋畫面，電腦版固定於左側) */}
+      <aside className="w-full md:w-[340px] lg:w-[380px] md:shrink-0 bg-white border-b md:border-b-0 md:border-r border-slate-200 p-4 sm:p-6 flex flex-col gap-6 md:h-screen md:sticky md:top-0 md:overflow-y-auto z-10 shadow-sm md:shadow-xl">
+        <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2.5 bg-slate-900 rounded-xl shrink-0">
+              <Box className="text-white w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-lg font-black text-slate-800 tracking-tight truncate">PCB 尺寸設計器</h1>
+              <p className="text-[11px] text-slate-400 font-semibold tracking-wide truncate">Dimension Designer</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-lg font-black text-slate-800 tracking-tight">PCB 尺寸設計器</h1>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Dimension Designer</p>
-          </div>
+
+          <button
+            type="button"
+            onClick={handleReset}
+            disabled={!hasNonZeroValue}
+            title="重置所有數值"
+            className={`min-h-[40px] px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-colors ${
+              hasNonZeroValue
+                ? 'bg-rose-50 text-rose-600 hover:bg-rose-100 active:bg-rose-200 cursor-pointer'
+                : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+            }`}
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>重置</span>
+          </button>
         </div>
 
-        <div className="flex flex-col gap-8 mt-2">
+        <div className="flex flex-col gap-6">
           <section>
-            <div className="flex items-center gap-2 text-slate-400 font-black mb-4 text-[11px] uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-slate-500 font-bold mb-3 text-xs">
               <Settings className="w-3.5 h-3.5" />
-              <span>1. 單板基本資訊</span>
+              <span>01. 單板基本資訊</span>
             </div>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <NumberInput label="單板寬度" value={config.unitWidth} onChange={(v) => handleUpdate('unitWidth', v)} />
               <NumberInput label="單板長度" value={config.unitHeight} onChange={(v) => handleUpdate('unitHeight', v)} />
               <NumberInput label="X 軸併數" value={config.countX} onChange={(v) => handleUpdate('countX', v)} suffix="Pcs" />
@@ -74,11 +101,11 @@ const App: React.FC = () => {
           </section>
 
           <section>
-            <div className="flex items-center gap-2 text-slate-400 font-black mb-4 text-[11px] uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-slate-500 font-bold mb-3 text-xs">
               <Ruler className="w-3.5 h-3.5" />
-              <span>2. 工藝板邊尺寸</span>
+              <span>02. 工藝板邊尺寸</span>
             </div>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <NumberInput label="上板邊" value={config.railTop} onChange={(v) => handleUpdate('railTop', v)} />
               <NumberInput label="下板邊" value={config.railBottom} onChange={(v) => handleUpdate('railBottom', v)} />
               <NumberInput label="左板邊" value={config.railLeft} onChange={(v) => handleUpdate('railLeft', v)} />
@@ -87,58 +114,81 @@ const App: React.FC = () => {
           </section>
 
           <section>
-            <div className="flex items-center gap-2 text-slate-400 font-black mb-4 text-[11px] uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-slate-500 font-bold mb-3 text-xs">
               <Layout className="w-3.5 h-3.5" />
-              <span>3. 中間併板間距</span>
+              <span>03. 中間併板間距</span>
             </div>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <NumberInput label="X 軸間距" value={config.gapX} onChange={(v) => handleUpdate('gapX', v)} />
               <NumberInput label="Y 軸間距" value={config.gapY} onChange={(v) => handleUpdate('gapY', v)} />
             </div>
           </section>
+
+          <button
+            type="button"
+            onClick={handleReset}
+            disabled={!hasNonZeroValue}
+            className={`w-full min-h-[44px] py-2.5 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors whitespace-nowrap ${
+              hasNonZeroValue
+                ? 'bg-slate-900 text-white hover:bg-slate-800 active:bg-slate-950 shadow-sm cursor-pointer'
+                : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+            }`}
+          >
+            <RotateCcw className="w-4 h-4" />
+            <span>重置所有數值</span>
+          </button>
         </div>
 
-        <div className="mt-auto pt-8 border-t border-slate-100 italic text-[10px] text-slate-400 text-center">
+        <div className="mt-auto pt-4 border-t border-slate-100 text-xs text-slate-400 text-center">
           所有尺寸單位均為 mm
         </div>
       </aside>
 
-      {/* 主繪圖區域 */}
-      <main className="flex-1 p-6 md:p-12 flex flex-col gap-10 overflow-hidden">
+      {/* 主繪圖與資訊區域 */}
+      <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-10 flex flex-col gap-6 lg:gap-8 md:h-screen md:overflow-y-auto">
         {/* 核心資訊看板 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">併板最終尺寸 (W×H)</p>
-             <h2 className="text-3xl font-black text-slate-900">{formatDim(results.totalWidth)} <span className="text-slate-300">×</span> {formatDim(results.totalHeight)} <span className="text-xs font-medium text-slate-400 ml-1">mm</span></h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5 shrink-0">
+          <div className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80">
+            <p className="text-xs font-bold text-slate-500 mb-1.5">併板最終尺寸 (W×H)</p>
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tabular-nums break-words">
+              {formatDim(results.totalWidth)} <span className="text-slate-300">×</span> {formatDim(results.totalHeight)}
+              <span className="text-xs font-medium text-slate-400 ml-1">mm</span>
+            </h2>
           </div>
-          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">單板原始尺寸</p>
-             <h2 className="text-3xl font-black text-slate-900">{config.unitWidth} <span className="text-slate-300">×</span> {config.unitHeight} <span className="text-xs font-medium text-slate-400 ml-1">mm</span></h2>
+          <div className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80">
+            <p className="text-xs font-bold text-slate-500 mb-1.5">單板原始尺寸</p>
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tabular-nums break-words">
+              {formatDim(config.unitWidth)} <span className="text-slate-300">×</span> {formatDim(config.unitHeight)}
+              <span className="text-xs font-medium text-slate-400 ml-1">mm</span>
+            </h2>
           </div>
-          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">中間間距 (X/Y)</p>
-             <h2 className="text-3xl font-black text-green-700">{config.gapX} <span className="text-slate-300">/</span> {config.gapY} <span className="text-xs font-medium text-slate-400 ml-1">mm</span></h2>
+          <div className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80">
+            <p className="text-xs font-bold text-slate-500 mb-1.5">中間間距 (X / Y)</p>
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-emerald-700 tabular-nums break-words">
+              {formatDim(config.gapX)} <span className="text-slate-300">/</span> {formatDim(config.gapY)}
+              <span className="text-xs font-medium text-slate-400 ml-1">mm</span>
+            </h2>
           </div>
         </div>
 
         {/* 繪圖顯示區 */}
-        <div className="flex-1 flex flex-col min-h-0 bg-white rounded-[40px] shadow-2xl shadow-slate-200/50 p-8 border border-white">
-          <div className="flex items-center justify-between mb-8">
+        <div className="flex-1 flex flex-col min-h-[360px] sm:min-h-[440px] bg-white rounded-2xl sm:rounded-[32px] border border-slate-200/80 p-4 sm:p-6 lg:p-8">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-4 sm:mb-6 shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-slate-50 rounded-2xl flex items-center justify-center">
-                <Box className="w-5 h-5 text-slate-400" />
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-slate-100 rounded-xl flex items-center justify-center shrink-0">
+                <Box className="w-5 h-5 text-slate-500" />
               </div>
               <div>
-                <h3 className="text-lg font-black text-slate-800 tracking-tight">併板尺寸圖形</h3>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">CAD SCALE PREVIEW</p>
+                <h3 className="text-base sm:text-lg font-black text-slate-800 tracking-tight">併板尺寸圖形</h3>
+                <p className="text-xs text-slate-400 font-medium">CAD Scale Preview</p>
               </div>
             </div>
-            <div className="flex gap-2">
-              <span className="px-3 py-1 bg-slate-100 rounded-full text-[10px] font-black text-slate-500 uppercase">數量: {results.totalUnits}</span>
+            <div className="text-xs font-bold text-slate-600 tabular-nums">
+              總併板數量：{results.totalUnits} Pcs
             </div>
           </div>
-          
-          <div className="flex-1 relative">
+
+          <div className="flex-1 relative flex items-center justify-center min-h-[300px] sm:min-h-[360px]">
             <PCBPanelDrawing config={config} />
           </div>
         </div>

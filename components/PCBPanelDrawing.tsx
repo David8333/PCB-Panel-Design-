@@ -95,8 +95,8 @@ export const PCBPanelDrawing: React.FC<PCBPanelDrawingProps> = ({ config }) => {
     return Number(num.toFixed(2)).toString();
   };
 
-  // 適配檢視範圍
-  const margin = Math.max(60, (totalWidth + totalHeight) * 0.08);
+  // 適配檢視範圍，確保上下左右標註文字在手機與電腦上皆完整顯示不裁切
+  const margin = Math.max(65, (totalWidth + totalHeight) * 0.1);
   const viewBoxWidth = totalWidth + margin * 2;
   const viewBoxHeight = totalHeight + margin * 2;
 
@@ -117,8 +117,8 @@ export const PCBPanelDrawing: React.FC<PCBPanelDrawingProps> = ({ config }) => {
 
   if (totalWidth <= 0 || totalHeight <= 0) {
     return (
-      <div className="w-full h-full bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 font-bold p-8 text-center">
-        請輸入正確尺寸以生成預覽
+      <div className="w-full h-full min-h-[280px] sm:min-h-[360px] bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 font-bold p-6 sm:p-8 text-center text-sm sm:text-base">
+        請於左側或上方輸入尺寸參數以生成即時併板預覽圖
       </div>
     );
   }
@@ -126,11 +126,11 @@ export const PCBPanelDrawing: React.FC<PCBPanelDrawingProps> = ({ config }) => {
   const WIREFRAME_COLOR = "#064e3b";
 
   return (
-    <div className="w-full h-full flex items-center justify-center overflow-hidden">
+    <div className="w-full h-full min-h-[300px] sm:min-h-[380px] flex items-center justify-center overflow-hidden">
       <svg
         viewBox={`-${margin} -${margin} ${viewBoxWidth} ${viewBoxHeight}`}
         preserveAspectRatio="xMidYMid meet"
-        className="w-full h-full transition-all duration-300"
+        className="w-full h-full max-h-[65vh] md:max-h-full select-none"
       >
         <rect x={-margin} y={-margin} width={viewBoxWidth} height={viewBoxHeight} fill="#ffffff" />
 
