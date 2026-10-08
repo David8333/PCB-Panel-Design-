@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { PCBConfig, PanelResult } from './types';
 import { NumberInput } from './components/NumberInput';
 import { PCBPanelDrawing } from './components/PCBPanelDrawing';
-import { Layout, Settings, Ruler, Box, RotateCcw } from 'lucide-react';
+import { Layout, Settings, Ruler, Box, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 
 const INITIAL_CONFIG: PCBConfig = {
   unitWidth: 0,
@@ -18,9 +18,14 @@ const INITIAL_CONFIG: PCBConfig = {
   gapY: 0,
 };
 
+const MIN_ZOOM = 25;
+const MAX_ZOOM = 300;
+const ZOOM_STEP = 25;
+
 const App: React.FC = () => {
   // 所有欄位預設為 0
   const [config, setConfig] = useState<PCBConfig>(INITIAL_CONFIG);
+  const [zoom, setZoom] = useState<number>(100);
 
   const results = useMemo((): PanelResult => {
     const totalW = config.railLeft + config.railRight + (config.unitWidth * config.countX) + (config.gapX * (Math.max(0, config.countX - 1)));
@@ -44,6 +49,15 @@ const App: React.FC = () => {
 
   const handleReset = () => {
     setConfig(INITIAL_CONFIG);
+    setZoom(100);
+  };
+
+  const handleZoomOut = () => {
+    setZoom(prev => Math.max(MIN_ZOOM, prev - ZOOM_STEP));
+  };
+
+  const handleZoomIn = () => {
+    setZoom(prev => Math.min(MAX_ZOOM, prev + ZOOM_STEP));
   };
 
   const hasNonZeroValue = useMemo(() => {
@@ -59,31 +73,14 @@ const App: React.FC = () => {
     <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#f8fafc] text-slate-900">
       {/* 側邊控制欄 (手機版自然向下捲動不遮擋畫面，電腦版固定於左側) */}
       <aside className="w-full md:w-[340px] lg:w-[380px] md:shrink-0 bg-white border-b md:border-b-0 md:border-r border-slate-200 p-4 sm:p-6 flex flex-col gap-6 md:h-screen md:sticky md:top-0 md:overflow-y-auto z-10 shadow-sm md:shadow-xl">
-        <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-4">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2.5 bg-slate-900 rounded-xl shrink-0">
-              <Box className="text-white w-5 h-5" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-base sm:text-lg font-black text-slate-800 tracking-tight truncate">PCB 尺寸設計器</h1>
-              <p className="text-[11px] text-slate-400 font-semibold tracking-wide truncate">Dimension Designer</p>
-            </div>
+        <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+          <div className="p-2.5 bg-slate-900 rounded-xl shrink-0">
+            <Box className="text-white w-5 h-5" />
           </div>
-
-          <button
-            type="button"
-            onClick={handleReset}
-            disabled={!hasNonZeroValue}
-            title="重置所有數值"
-            className={`min-h-[40px] px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-colors ${
-              hasNonZeroValue
-                ? 'bg-rose-50 text-rose-600 hover:bg-rose-100 active:bg-rose-200 cursor-pointer'
-                : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-            }`}
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>重置</span>
-          </button>
+          <div className="min-w-0">
+            <h1 className="text-base sm:text-lg font-black text-slate-800 tracking-tight truncate">PCB 尺寸設計器</h1>
+            <p className="text-[11px] text-slate-400 font-semibold tracking-wide truncate">Dimension Designer</p>
+          </div>
         </div>
 
         <div className="flex flex-col gap-6">
@@ -172,24 +169,66 @@ const App: React.FC = () => {
         </div>
 
         {/* 繪圖顯示區 */}
-        <div className="flex-1 flex flex-col min-h-[360px] sm:min-h-[440px] bg-white rounded-2xl sm:rounded-[32px] border border-slate-200/80 p-4 sm:p-6 lg:p-8">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-4 sm:mb-6 shrink-0">
+        <div className="flex-1 flex flex-col min-h-[380px] sm:min-h-[460px] bg-white rounded-2xl sm:rounded-[32px] border border-slate-200/80 p-4 sm:p-6 lg:p-8">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4 sm:mb-6 shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 sm:w-10 sm:h-10 bg-slate-100 rounded-xl flex items-center justify-center shrink-0">
                 <Box className="w-5 h-5 text-slate-500" />
               </div>
               <div>
                 <h3 className="text-base sm:text-lg font-black text-slate-800 tracking-tight">併板尺寸圖形</h3>
-                <p className="text-xs text-slate-400 font-medium">CAD Scale Preview</p>
+                <p className="text-xs text-slate-400 font-medium">
+                  CAD Scale Preview · 總數量 {results.totalUnits} Pcs
+                </p>
               </div>
             </div>
-            <div className="text-xs font-bold text-slate-600 tabular-nums">
-              總併板數量：{results.totalUnits} Pcs
+
+            {/* 百分比縮放控制器 */}
+            <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-50 border border-slate-200/80 rounded-xl p-1">
+              <button
+                type="button"
+                onClick={handleZoomOut}
+                disabled={zoom <= MIN_ZOOM}
+                title="縮小"
+                className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-slate-700 hover:bg-white hover:shadow-sm disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:shadow-none transition-all cursor-pointer disabled:cursor-not-allowed"
+              >
+                <ZoomOut className="w-4 h-4" />
+              </button>
+
+              <input
+                type="range"
+                min={MIN_ZOOM}
+                max={MAX_ZOOM}
+                step={5}
+                value={zoom}
+                onChange={(e) => setZoom(Number(e.target.value))}
+                aria-label="縮放百分比"
+                className="w-20 sm:w-28 accent-slate-900 cursor-pointer"
+              />
+
+              <button
+                type="button"
+                onClick={() => setZoom(100)}
+                title="點擊還原 100%"
+                className="min-h-[36px] px-2.5 rounded-lg text-xs font-black text-slate-800 hover:bg-white hover:shadow-sm transition-all tabular-nums whitespace-nowrap cursor-pointer"
+              >
+                {zoom}%
+              </button>
+
+              <button
+                type="button"
+                onClick={handleZoomIn}
+                disabled={zoom >= MAX_ZOOM}
+                title="放大"
+                className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg text-slate-700 hover:bg-white hover:shadow-sm disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:shadow-none transition-all cursor-pointer disabled:cursor-not-allowed"
+              >
+                <ZoomIn className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
-          <div className="flex-1 relative flex items-center justify-center min-h-[300px] sm:min-h-[360px]">
-            <PCBPanelDrawing config={config} />
+          <div className="flex-1 relative flex items-center justify-center min-h-[300px] sm:min-h-[360px] overflow-hidden">
+            <PCBPanelDrawing config={config} zoom={zoom} />
           </div>
         </div>
       </main>

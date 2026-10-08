@@ -4,6 +4,7 @@ import { PCBConfig } from '../types';
 
 interface PCBPanelDrawingProps {
   config: PCBConfig;
+  zoom?: number;
 }
 
 const DimensionLine = ({ 
@@ -80,7 +81,7 @@ const DimensionLine = ({
   );
 };
 
-export const PCBPanelDrawing: React.FC<PCBPanelDrawingProps> = ({ config }) => {
+export const PCBPanelDrawing: React.FC<PCBPanelDrawingProps> = ({ config, zoom = 100 }) => {
   const {
     unitWidth, unitHeight, countX, countY,
     railTop, railBottom, railLeft, railRight,
@@ -126,12 +127,19 @@ export const PCBPanelDrawing: React.FC<PCBPanelDrawingProps> = ({ config }) => {
   const WIREFRAME_COLOR = "#064e3b";
 
   return (
-    <div className="w-full h-full min-h-[300px] sm:min-h-[380px] flex items-center justify-center overflow-hidden">
-      <svg
-        viewBox={`-${margin} -${margin} ${viewBoxWidth} ${viewBoxHeight}`}
-        preserveAspectRatio="xMidYMid meet"
-        className="w-full h-full max-h-[65vh] md:max-h-full select-none"
+    <div className="w-full h-full min-h-[300px] sm:min-h-[380px] max-h-[65vh] md:max-h-full flex overflow-auto bg-white rounded-xl border border-slate-100">
+      <div
+        className="m-auto shrink-0 flex items-center justify-center transition-all duration-150"
+        style={{
+          width: `${zoom}%`,
+          height: `${zoom}%`,
+        }}
       >
+        <svg
+          viewBox={`-${margin} -${margin} ${viewBoxWidth} ${viewBoxHeight}`}
+          preserveAspectRatio="xMidYMid meet"
+          className="w-full h-full select-none"
+        >
         <rect x={-margin} y={-margin} width={viewBoxWidth} height={viewBoxHeight} fill="#ffffff" />
 
         {/* 併板主外框 (0.1mm) */}
@@ -195,6 +203,7 @@ export const PCBPanelDrawing: React.FC<PCBPanelDrawingProps> = ({ config }) => {
           <DimensionLine x1={totalWidth - railRight} y1={totalHeight} x2={totalWidth} y2={totalHeight} value={railRight} position="bottom" offset={10} textGap={0} />
         )}
       </svg>
+      </div>
     </div>
   );
 };
